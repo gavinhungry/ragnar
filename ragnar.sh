@@ -7,7 +7,7 @@
 
 source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
-SERVER=${RAGNAR_SERVER:-subterfuge}
+SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
 
 TMPDIR=/tmp/.nbd-${SERVER}-${NBDEXPORT}
