@@ -7,11 +7,20 @@
 
 source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
-SERVER=${RAGNAR_SERVER:-localhost}
+SERVER=${RAGNAR_SERVER:-subterfuge}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
+KEYFILE=${RAGNAR_KEYFILE}
 
 TMPDIR=/tmp/.nbd-${SERVER}-${NBDEXPORT}
 mkdir -p $TMPDIR
+
+nbd_device() {
+  cat "${TMPDIR}/nbd"
+}
+
+ssh_pid() {
+  cat "${TMPDIR}/ssh"
+}
 
 nbd_is_open() {
   [ -f "/sys/block/${1}/pid" ]
@@ -28,27 +37,38 @@ nbd_next_open() {
 }
 
 ssh_is_open() {
-  [ -f "${TMPDIR}/ssh" ] && ps -p $(cat "${TMPDIR}/ssh") &> /dev/null
+  [ -f "${TMPDIR}/ssh" ] && ps -p $(ssh_pid) &> /dev/null
 }
 
 close_ssh() {
   if ssh_is_open; then
-    kill $(cat "${TMPDIR}/ssh") && rm "${TMPDIR}/ssh"
+    kill -9 $(ssh_pid) &> /dev/null && rm "${TMPDIR}/ssh"
   fi
 }
 
 export_is_open() {
   [ -f "${TMPDIR}/nbd" ] || return 1
-  nbd_is_open $(cat "${TMPDIR}/nbd")
+  nbd_is_open $(nbd_device)
+}
+
+close_export() {
+  if export_is_open; then
+    sudo -v
+    sudo modprobe nbd
+    sudo nbd-client -d /dev/$(nbd_device) &> /dev/null
+  fi
 }
 
 open() {
-  export_is_open && err "${NBDEXPORT} already open on $(cat "${TMPDIR}/nbd")"
+  export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
 
-  msg "Opening SSH connection to $SERVER"
-  close_ssh
-  ssh -N -L 10809:127.0.0.1:10809 $SERVER &> /dev/null &
-  echo $! > $TMPDIR/ssh
+  msg "Opening SSH connection to ${SERVER}"
+  close_ssh || die "Could not close existing SSH connection to ${SERVER}"
+  ssh -NnL 10809:127.0.0.1:10809 $SERVER &> /dev/null &
+  SSH_PID=$!
+  disown $SSH_PID
+  echo $SSH_PID > $TMPDIR/ssh
+  sleep 1
 
   NBD=$(nbd_next_open)
 
@@ -67,12 +87,17 @@ open() {
 }
 
 close() {
-  echo CLOSE
   # unmount
   # luksClose
-  # close NBD export
-  # close_ssh
+
+  export_is_open && msg "Closing network block device on $(nbd_device)"
+  close_export
+
+  ssh_is_open && msg "Closing SSH connection to ${SERVER}"
+  close_ssh
 }
+
+# [ -z "$KEYFILE" ] && die "RAGNAR_KEYFILE must be specified"
 
 case $1 in
   'open') open ;;
