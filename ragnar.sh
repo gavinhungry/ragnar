@@ -109,6 +109,7 @@ unmount_filesystem() {
 
 open() {
   export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
+  sudo [ -f "${KEYFILE}" ] || die "Keyfile not found"
 
   msg "Opening SSH connection to ${SERVER}"
   open_ssh || die "Could not open SSH connection to ${SERVER}"
@@ -143,8 +144,6 @@ close() {
 
   rm -fr ${TMPDIR}
 }
-
-sudo [ -f "${KEYFILE}" ] || die "Keyfile not found"
 
 case $1 in
   'open') open ;;
