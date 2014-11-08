@@ -110,18 +110,18 @@ open() {
   export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
   checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
 
-  msg "Opening SSH connection to ${SERVER}"
+  inform "Opening SSH connection to ${SERVER}"
   open_ssh || die "Could not open SSH connection to ${SERVER}"
   sleep 1
 
   NBD=$(nbd_next_open)
-  msg "Opening network block device on /dev/${NBD}"
+  inform "Opening network block device on /dev/${NBD}"
   open_export ${NBD} || die "Could not open network block device on /dev/${NBD}"
 
-  msg "Opening LUKS device from /dev/${NBD}"
+  inform "Opening LUKS device from /dev/${NBD}"
   luks_open || die "Could not open LUKS device from /dev/${NBD}"
 
-  msg "Mounting filesystem on /media/${NBDEXPORT}"
+  inform "Mounting filesystem on /media/${NBDEXPORT}"
   mount_filesystem || die "Could not mount filesystem on /media/${NBDEXPORT}"
 }
 
@@ -131,16 +131,16 @@ close() {
 
   checksu
 
-  filesystem_is_mounted && msg "Closing filesystem on /media/${NBDEXPORT}"
+  filesystem_is_mounted && inform "Closing filesystem on /media/${NBDEXPORT}"
   unmount_filesystem || die "Could not close filesystem on /media/${NBDEXPORT}"
 
-  luks_is_open && msg "Closing LUKS device from /dev/${NBD}"
+  luks_is_open && inform "Closing LUKS device from /dev/${NBD}"
   luks_close || die "Could not close LUKS device from /dev/${NBD}"
 
-  export_is_open && msg "Closing network block device on /dev/${NBD}"
+  export_is_open && inform "Closing network block device on /dev/${NBD}"
   close_export || die "Could not close network block device on /dev/${NBD}"
 
-  ssh_is_open && msg "Closing SSH connection to ${SERVER}"
+  ssh_is_open && inform "Closing SSH connection to ${SERVER}"
   close_ssh || die "Could not close existing SSH connection to ${SERVER}"
 
   rm -fr ${TMPDIR}
