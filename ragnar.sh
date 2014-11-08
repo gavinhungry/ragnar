@@ -62,11 +62,10 @@ export_is_open() {
 }
 
 open_export() {
-  sudo -v
-  sudo modprobe nbd
+  checksu modprobe nbd
   NBD=$1
 
-  if sudo nbd-client localhost /dev/${NBD} -name ${NBDEXPORT} &> /dev/null; then
+  if checksu nbd-client localhost /dev/${NBD} -name ${NBDEXPORT} &> /dev/null; then
     echo ${NBD} > ${TMPDIR}/nbd
   else
     close_ssh
@@ -77,9 +76,9 @@ open_export() {
 
 close_export() {
   if export_is_open; then
-    sudo -v
-    sudo modprobe nbd
-    sudo nbd-client -d /dev/$(nbd_device) &> /dev/null && rm -f "${TMPDIR}/nbd"
+    checksu
+    checksu modprobe nbd
+    checksu nbd-client -d /dev/$(nbd_device) &> /dev/null && rm -f "${TMPDIR}/nbd"
   fi
 }
 
@@ -88,11 +87,11 @@ luks_is_open() {
 }
 
 luks_open() {
-  sudo cryptsetup luksOpen /dev/$(nbd_device) ${NBDEXPORT} -d ${KEYFILE}
+  checksu cryptsetup luksOpen /dev/$(nbd_device) ${NBDEXPORT} -d ${KEYFILE}
 }
 
 luks_close() {
-  sudo cryptsetup luksClose /dev/mapper/${NBDEXPORT}
+  checksu cryptsetup luksClose /dev/mapper/${NBDEXPORT}
 }
 
 filesystem_is_mounted() {
@@ -100,16 +99,16 @@ filesystem_is_mounted() {
 }
 
 mount_filesystem() {
-  sudo udisks --mount /dev/mapper/${NBDEXPORT} &> /dev/null
+  checksu udisks --mount /dev/mapper/${NBDEXPORT} &> /dev/null
 }
 
 unmount_filesystem() {
-  sudo udisks --unmount /dev/mapper/${NBDEXPORT} &> /dev/null
+  checksu udisks --unmount /dev/mapper/${NBDEXPORT} &> /dev/null
 }
 
 open() {
   export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
-  sudo [ -f "${KEYFILE}" ] || die "Keyfile not found"
+  checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
 
   msg "Opening SSH connection to ${SERVER}"
   open_ssh || die "Could not open SSH connection to ${SERVER}"
