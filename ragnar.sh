@@ -5,7 +5,7 @@
 # Desc: Mount a remote LUKS device with NBD over SSH
 #
 
-source $(dirname "${BASH_SOURCE}")/abash/abash.sh
+[ ${_ABASH:-0} -ne 0 ] || source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
 SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
