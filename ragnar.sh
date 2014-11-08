@@ -129,6 +129,8 @@ close() {
   export_is_open || die "${NBDEXPORT} is not open"
   NBD=$(nbd_device)
 
+  checksu
+
   filesystem_is_mounted && msg "Closing filesystem on /media/${NBDEXPORT}"
   unmount_filesystem || die "Could not close filesystem on /media/${NBDEXPORT}"
 
