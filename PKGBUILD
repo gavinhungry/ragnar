@@ -1,7 +1,7 @@
 # Maintainer: Gavin Lloyd <gavinhungry@gmail.com>
 
 pkgname=ragnar-git
-pkgver=0.17.18fe040
+pkgver=0.19.91e31e2
 pkgrel=1
 pkgdesc="Mount an existing remote LUKS device with NBD over SSH"
 url="https://github.com/gavinhungry/ragnar"
