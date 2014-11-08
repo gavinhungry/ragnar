@@ -2,7 +2,7 @@
 #
 # Name: ragnar
 # Auth: Gavin Lloyd <gavinhungry@gmail.com>
-# Desc: Mount a remote LUKS device with NBD over SSH
+# Desc: Mount an existing remote LUKS device with NBD over SSH
 #
 
 [ ${_ABASH:-0} -ne 0 ] || source $(dirname "${BASH_SOURCE}")/abash/abash.sh
