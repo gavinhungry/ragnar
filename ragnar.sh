@@ -4,6 +4,9 @@
 # Auth: Gavin Lloyd <gavinhungry@gmail.com>
 # Desc: Mount an existing remote LUKS device with NBD over SSH
 #
+# Released under the terms of the MIT license
+# https://github.com/gavinhungry/ragnar
+#
 
 [ ${_ABASH:-0} -ne 0 ] || source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
