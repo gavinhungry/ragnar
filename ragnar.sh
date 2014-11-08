@@ -7,7 +7,7 @@
 
 source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
-SERVER=${RAGNAR_SERVER:-subterfuge}
+SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${NBDEXPORT}.key}
 
@@ -123,8 +123,8 @@ open() {
 }
 
 close() {
+  export_is_open || die "${NBDEXPORT} is not open"
   NBD=$(nbd_device)
-  [ -z "${NBD}" ] && die "Could not find open network block device!"
 
   filesystem_is_mounted && msg "Closing filesystem on /media/${NBDEXPORT}"
   unmount_filesystem || die "Could not close filesystem on /media/${NBDEXPORT}"
