@@ -47,6 +47,8 @@ nbd_is_open() {
 }
 
 nbd_next_open() {
+  checksu modprobe nbd
+
   for DEV in /dev/nbd*; do
     NBD=$(echo ${DEV} | cut -d'/' -f3)
     if ! nbd_is_open ${NBD}; then
