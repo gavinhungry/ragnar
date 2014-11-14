@@ -13,6 +13,7 @@
 SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${NBDEXPORT}.key}
+HEADER=${RAGNAR_HEADER:-/etc/luks/${NBDEXPORT}.header}
 
 TMPDIR=/tmp/.nbd-${SERVER}-${NBDEXPORT}
 mkdir -p ${TMPDIR}
@@ -89,7 +90,9 @@ luks_is_open() {
 }
 
 luks_open() {
-  checksu cryptsetup luksOpen /dev/$(nbd_device) ${NBDEXPORT} -d ${KEYFILE}
+  NBD=$1
+  checksu [ -f ${HEADER} ] || HEADER=${NBD}
+  checksu cryptsetup luksOpen /dev/${NBD} ${NBDEXPORT} -d ${KEYFILE} --header ${HEADER}
 }
 
 luks_close() {
@@ -121,7 +124,7 @@ open() {
   open_export ${NBD} || die "Could not open network block device on /dev/${NBD}"
 
   inform "Opening LUKS device from /dev/${NBD}"
-  luks_open || die "Could not open LUKS device from /dev/${NBD}"
+  luks_open ${NBD} || die "Could not open LUKS device from /dev/${NBD}"
 
   inform "Mounting filesystem on /media/${NBDEXPORT}"
   mount_filesystem || die "Could not mount filesystem on /media/${NBDEXPORT}"
