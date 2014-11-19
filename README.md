@@ -38,7 +38,6 @@ Usage
     ragnar: Closing network block device on /dev/nbd0
     ragnar: Closing SSH connection to localhost
 
-
 License
 -------
 Released under the terms of the
