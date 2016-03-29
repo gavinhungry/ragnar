@@ -23,11 +23,11 @@ ssh_pid() {
 }
 
 ssh_is_open() {
-  [ -f "${TMPDIR}/ssh" ] && ps -p $(ssh_pid) &> /dev/null
+  [ -f "${TMPDIR}/ssh" ] && quietly ps -p $(ssh_pid)
 }
 
 open_ssh() {
-  ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &> /dev/null &
+  quietly ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &
   SSH_PID=$!
   disown ${SSH_PID}
   echo ${SSH_PID} > ${TMPDIR}/ssh
@@ -35,7 +35,7 @@ open_ssh() {
 
 close_ssh() {
   if ssh_is_open; then
-    kill -9 $(ssh_pid) &> /dev/null && rm "${TMPDIR}/ssh"
+    quietly kill -9 $(ssh_pid) && quietly rm "${TMPDIR}/ssh"
   fi
 }
 
@@ -68,7 +68,7 @@ open_export() {
   checksu modprobe nbd
   NBD=$1
 
-  if checksu nbd-client localhost /dev/${NBD} -name ${NBDEXPORT} &> /dev/null; then
+  if quietly checksu nbd-client localhost /dev/${NBD} -name ${NBDEXPORT}; then
     echo ${NBD} > ${TMPDIR}/nbd
   else
     close_ssh
@@ -81,7 +81,7 @@ close_export() {
   if export_is_open; then
     checksu
     checksu modprobe nbd
-    checksu nbd-client -d /dev/$(nbd_device) &> /dev/null && rm -f "${TMPDIR}/nbd"
+    quietly checksu nbd-client -d /dev/$(nbd_device) && quietly rm -f "${TMPDIR}/nbd"
   fi
 }
 
@@ -100,15 +100,15 @@ luks_close() {
 }
 
 filesystem_is_mounted() {
-  mountpoint /media/${NBDEXPORT} &> /dev/null
+  quietly mountpoint /media/${NBDEXPORT}
 }
 
 mount_filesystem() {
-  checksu udisks --mount /dev/mapper/${NBDEXPORT} &> /dev/null
+  quietly checksu udisks --mount /dev/mapper/${NBDEXPORT}
 }
 
 unmount_filesystem() {
-  checksu udisks --unmount /dev/mapper/${NBDEXPORT} &> /dev/null
+  quietly checksu udisks --unmount /dev/mapper/${NBDEXPORT}
 }
 
 open() {
