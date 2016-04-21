@@ -27,7 +27,7 @@ ssh_is_open() {
 }
 
 open_ssh() {
-  quietly ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &
+  ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &
   SSH_PID=$!
   disown ${SSH_PID}
   echo ${SSH_PID} > ${TMPDIR}/ssh
