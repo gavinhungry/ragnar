@@ -23,22 +23,22 @@ Usage
     $ ragnar open
     [sudo] password:
 
-    ragnar: Opening SSH connection to localhost
-    ragnar: Opening network block device on /dev/nbd0
-    ragnar: Opening LUKS device from /dev/nbd0
-    ragnar: Mounting filesystem on /media/ragnar
+    ragnar: Opening SSH connection to localhost ...
+    ragnar: Opening network block device on /dev/nbd0 ...
+    ragnar: Opening LUKS device from /dev/nbd0 ...
+    ragnar: Mounting filesystem from /dev/mapper/ragnar ...
+    ragnar: Filesystem is mounted on /media/ragnar
 
 ### Close
 
     $ ragnar close
     [sudo] password:
 
-    ragnar: Closing filesystem on /media/ragnar
-    ragnar: Closing LUKS device from /dev/nbd0
-    ragnar: Closing network block device on /dev/nbd0
-    ragnar: Closing SSH connection to localhost
+    ragnar: Closing filesystem on /media/ragnar ...
+    ragnar: Closing LUKS device from /dev/nbd0 ...
+    ragnar: Closing network block device on /dev/nbd0 ...
+    ragnar: Closing SSH connection to localhost ...
 
 License
 -------
-Released under the terms of the
-[MIT license](http://tldrlegal.com/license/mit-license). See **LICENSE**.
+This software is released under the terms of the **MIT license**. See `LICENSE`.
