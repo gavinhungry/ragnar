@@ -99,16 +99,20 @@ luks_close() {
   checksu cryptsetup luksClose /dev/mapper/${NBDEXPORT}
 }
 
+filesystem_mountpoint() {
+  udisksctl info -b /dev/mapper/${NBDEXPORT} 2> /dev/null | grep MountPoints | cut -d':' -f2 | sed 's/^\s*//'
+}
+
 filesystem_is_mounted() {
-  quietly mountpoint /media/${NBDEXPORT}
+  [ -n "$(filesystem_mountpoint)" ]
 }
 
 mount_filesystem() {
-  quietly checksu udisks --mount /dev/mapper/${NBDEXPORT}
+  quietly checksu udisksctl mount -b /dev/mapper/${NBDEXPORT}
 }
 
 unmount_filesystem() {
-  quietly checksu udisks --unmount /dev/mapper/${NBDEXPORT}
+  quietly checksu udisksctl unmount -b /dev/mapper/${NBDEXPORT}
 }
 
 open() {
@@ -126,8 +130,10 @@ open() {
   inform "Opening LUKS device from /dev/${NBD}"
   luks_open ${NBD} || die "Could not open LUKS device from /dev/${NBD}"
 
-  inform "Mounting filesystem on /media/${NBDEXPORT}"
-  mount_filesystem || die "Could not mount filesystem on /media/${NBDEXPORT}"
+  inform "Mounting filesystem from /dev/mapper/${NBDEXPORT}"
+  mount_filesystem || die "Could not mount filesystem from /dev/mapper/${NBDEXPORT}"
+
+  msg "Filesystem is mounted on $(filesystem_mountpoint)"
 }
 
 close() {
@@ -136,8 +142,10 @@ close() {
 
   checksu
 
-  filesystem_is_mounted && inform "Closing filesystem on /media/${NBDEXPORT}"
-  unmount_filesystem || die "Could not close filesystem on /media/${NBDEXPORT}"
+  MOUNTPOINT=$(filesystem_mountpoint)
+
+  filesystem_is_mounted && inform "Closing filesystem on ${MOUNTPOINT}"
+  unmount_filesystem || die "Could not close filesystem on ${MOUNTPOINT}"
 
   luks_is_open && inform "Closing LUKS device from /dev/${NBD}"
   luks_close || die "Could not close LUKS device from /dev/${NBD}"
