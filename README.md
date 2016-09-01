@@ -1,6 +1,10 @@
 [ragnar](http://en.battlestarwiki.org/wiki/Ragnar_Anchorage)
-======
-Mount an existing remote LUKS device with NBD over SSH.
+========
+Mount an existing remote
+[LUKS](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) device
+with [NBD](http://nbd.sourceforge.net/) over SSH. This has the advantage of
+never exposing your LUKS keyfile to the server, as all encryption/decryption
+takes place on your local machine.
 
 You must have an existing LUKS device with a keyfile being exported by NBD on
 some remote server. Your NBD server should be behind a firewall, and only listen
