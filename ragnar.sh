@@ -68,7 +68,7 @@ open_export() {
   checksu modprobe nbd
   NBD=$1
 
-  if quietly checksu nbd-client localhost /dev/${NBD} -name ${NBDEXPORT}; then
+  if quietly checksu nbd-client 127.0.0.1 /dev/${NBD} -name ${NBDEXPORT}; then
     echo ${NBD} > ${TMPDIR}/nbd
   else
     close_ssh
