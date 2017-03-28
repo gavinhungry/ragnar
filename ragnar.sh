@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Name: ragnar
 # Auth: Gavin Lloyd <gavinhungry@gmail.com>
@@ -15,32 +15,32 @@ NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${NBDEXPORT}.key}
 HEADER=${RAGNAR_HEADER:-/etc/luks/${NBDEXPORT}.header}
 
-TMPDIR=/tmp/.nbd-${SERVER}-${NBDEXPORT}
-mkdir -p ${TMPDIR}
+TMP=$(tmpdirp "${SERVER}-${NBDEXPORT}")
+mkdir -p ${TMP}
 
 ssh_pid() {
-  cat "${TMPDIR}/ssh" 2> /dev/null
+  cat "${TMP}/ssh" 2> /dev/null
 }
 
 ssh_is_open() {
-  [ -f "${TMPDIR}/ssh" ] && quietly ps -p $(ssh_pid)
+  [ -f "${TMP}/ssh" ] && quietly ps -p $(ssh_pid)
 }
 
 open_ssh() {
   ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &
   SSH_PID=$!
   disown ${SSH_PID}
-  echo ${SSH_PID} > ${TMPDIR}/ssh
+  echo ${SSH_PID} > ${TMP}/ssh
 }
 
 close_ssh() {
   if ssh_is_open; then
-    quietly kill -9 $(ssh_pid) && quietly rm "${TMPDIR}/ssh"
+    quietly kill -9 $(ssh_pid) && quietly rm "${TMP}/ssh"
   fi
 }
 
 nbd_device() {
-  cat "${TMPDIR}/nbd" 2> /dev/null
+  cat "${TMP}/nbd" 2> /dev/null
 }
 
 nbd_is_open() {
@@ -60,7 +60,7 @@ nbd_next_open() {
 }
 
 export_is_open() {
-  [ -f "${TMPDIR}/nbd" ] || return 1
+  [ -f "${TMP}/nbd" ] || return 1
   nbd_is_open $(nbd_device)
 }
 
@@ -69,10 +69,10 @@ open_export() {
   NBD=$1
 
   if quietly checksu nbd-client 127.0.0.1 /dev/${NBD} -name ${NBDEXPORT}; then
-    echo ${NBD} > ${TMPDIR}/nbd
+    echo ${NBD} > ${TMP}/nbd
   else
     close_ssh
-    rm -fr ${TMPDIR}
+    rm -fr ${TMP}
     return 1
   fi
 }
@@ -81,7 +81,7 @@ close_export() {
   if export_is_open; then
     checksu
     checksu modprobe nbd
-    quietly checksu nbd-client -d /dev/$(nbd_device) && quietly rm -f "${TMPDIR}/nbd"
+    quietly checksu nbd-client -d /dev/$(nbd_device) && quietly rm -f "${TMP}/nbd"
   fi
 }
 
@@ -156,7 +156,7 @@ close() {
   ssh_is_open && inform "Closing SSH connection to ${SERVER}"
   close_ssh || die "Could not close existing SSH connection to ${SERVER}"
 
-  rm -fr ${TMPDIR}
+  tmpdirclean
 }
 
 case $1 in
