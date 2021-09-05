@@ -18,24 +18,17 @@ HEADER=${RAGNAR_HEADER:-/etc/luks/${NBDEXPORT}.header}
 TMP=$(tmpdirp "${SERVER}-${NBDEXPORT}")
 mkdir -p ${TMP}
 
-ssh_pid() {
-  cat "${TMP}/ssh" 2> /dev/null
-}
-
 ssh_is_open() {
-  [ -f "${TMP}/ssh" ] && quietly ps -p $(ssh_pid)
+  ssh -qO check -S "${TMP}/ssh" ${SERVER} &> /dev/null
 }
 
 open_ssh() {
-  ssh -NnL 10809:127.0.0.1:10809 ${SERVER} &
-  SSH_PID=$!
-  disown ${SSH_PID}
-  echo ${SSH_PID} > ${TMP}/ssh
+  ssh -fNn -MS "${TMP}/ssh" -L 10809:127.0.0.1:10809 ${SERVER}
 }
 
 close_ssh() {
   if ssh_is_open; then
-    quietly kill -9 $(ssh_pid) && quietly rm "${TMP}/ssh"
+    ssh -qO exit -S "${TMP}/ssh" ${SERVER}
   fi
 }
 
