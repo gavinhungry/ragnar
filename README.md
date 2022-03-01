@@ -1,7 +1,6 @@
 [ragnar](http://en.battlestarwiki.org/wiki/Ragnar_Anchorage)
 ========
-Mount an existing remote
-[LUKS](https://gitlab.com/cryptsetup/cryptsetup/blob/master/README.md) device
+Mount an existing remote [LUKS](https://gitlab.com/cryptsetup/cryptsetup) device
 with [NBD](http://nbd.sourceforge.net/) over SSH. This has the advantage of
 never exposing your LUKS keyfile to the server, as all encryption/decryption
 takes place on your local machine.
