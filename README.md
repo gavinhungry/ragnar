@@ -17,6 +17,8 @@ Environment Variables
     `/etc/nbd-server/config`). Defaults to `ragnar`.
   - `RAGNAR_KEYFILE`: Path to LUKS keyfile. Defaults to
     `/etc/luks/${RAGNAR_NBDEXPORT}.key`
+  - `RAGNAR_SSH_USER`: The remote SSH user to login as. Defaults
+    to the current user.
 
 Usage
 -----

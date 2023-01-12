@@ -14,6 +14,7 @@ SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${NBDEXPORT}.key}
 HEADER=${RAGNAR_HEADER:-/etc/luks/${NBDEXPORT}.header}
+SSH_USER=${RAGNAR_SSH_USER:-$(whoami)}
 
 TMP=$(tmpdirp "${SERVER}-${NBDEXPORT}")
 mkdir -p ${TMP}
@@ -23,7 +24,7 @@ ssh_is_open() {
 }
 
 open_ssh() {
-  ssh -fNn -MS "${TMP}/ssh" -L 10809:127.0.0.1:10809 ${SERVER}
+  ssh -fNn -MS "${TMP}/ssh" -L 10809:127.0.0.1:10809 ${SSH_USER}@${SERVER}
 }
 
 close_ssh() {
