@@ -15,6 +15,8 @@ EXPORT=${RAGNAR_EXPORT:-${RAGNAR_NBDEXPORT:-ragnar}} # legacy RAGNAR_NBDEXPORT
 PORT=${RAGNAR_PORT:-10809}
 HEADER=${RAGNAR_HEADER:-/etc/luks/${EXPORT}.header}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${EXPORT}.key}
+MOUNTPOINT=${RAGNAR_MOUNTPOINT:-}
+MOUNT_OPTIONS=${RAGNAR_MOUNT_OPTIONS:-}
 
 TMP=$(tmpdirp "${SERVER}-${EXPORT}")
 mkdir -p ${TMP}
@@ -102,11 +104,26 @@ filesystem_is_mounted() {
 }
 
 mount_filesystem() {
-  quietly checksu udisksctl mount -b /dev/mapper/${EXPORT}
+  local -a COMMAND
+
+  if [ -n "${MOUNTPOINT}" ]; then
+    COMMAND=(mount)
+  else
+    COMMAND=(udisksctl mount -b /dev/mapper/${EXPORT})
+  fi
+
+  [ -z "${MOUNT_OPTIONS}" ] || COMMAND+=(-o "${MOUNT_OPTIONS}")
+  [ -z "${MOUNTPOINT}" ] || COMMAND+=(/dev/mapper/${EXPORT} "${MOUNTPOINT}")
+
+  quietly checksu "${COMMAND[@]}"
 }
 
 unmount_filesystem() {
-  quietly checksu udisksctl unmount -b /dev/mapper/${EXPORT}
+  if [ -n "${MOUNTPOINT}" ]; then
+    quietly checksu umount "${MOUNTPOINT}"
+  else
+    quietly checksu udisksctl unmount -b /dev/mapper/${EXPORT}
+  fi
 }
 
 open_transport() {
@@ -151,6 +168,7 @@ detach() {
 open() {
   export_is_open && die "${EXPORT} already open on $(nbd_device)"
   checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
+  [ -z "${MOUNTPOINT}" ] || [ -d "${MOUNTPOINT}" ] || die "Mountpoint does not exist: ${MOUNTPOINT}"
 
   open_transport
 

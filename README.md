@@ -20,6 +20,10 @@ Environment Variables
     `/etc/luks/${RAGNAR_EXPORT}.header`
   - `RAGNAR_KEYFILE`: Path to LUKS keyfile. Defaults to
     `/etc/luks/${RAGNAR_EXPORT}.key`
+  - `RAGNAR_MOUNTPOINT`: Existing local directory at which to mount the
+    filesystem. When unset, `udisksctl` selects the mountpoint.
+  - `RAGNAR_MOUNT_OPTIONS`: Comma-separated mount options. Defaults to no
+    explicit options.
 
 Usage
 -----
