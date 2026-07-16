@@ -12,6 +12,7 @@
 
 SERVER=${RAGNAR_SERVER:-localhost}
 NBDEXPORT=${RAGNAR_NBDEXPORT:-ragnar}
+PORT=${RAGNAR_PORT:-10809}
 KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${NBDEXPORT}.key}
 HEADER=${RAGNAR_HEADER:-/etc/luks/${NBDEXPORT}.header}
 
@@ -23,7 +24,7 @@ ssh_is_open() {
 }
 
 open_ssh() {
-  ssh -fNn -MS "${TMP}/ssh" -L 10809:127.0.0.1:10809 ${SERVER}
+  ssh -fNn -MS "${TMP}/ssh" -L ${PORT}:127.0.0.1:10809 ${SERVER}
 }
 
 close_ssh() {
@@ -61,7 +62,7 @@ open_export() {
   checksu modprobe nbd
   NBD=$1
 
-  if quietly checksu nbd-client 127.0.0.1 /dev/${NBD} -name ${NBDEXPORT}; then
+  if quietly checksu nbd-client 127.0.0.1 ${PORT} /dev/${NBD} -name ${NBDEXPORT}; then
     echo ${NBD} > ${TMP}/nbd
   else
     close_ssh
@@ -108,9 +109,8 @@ unmount_filesystem() {
   quietly checksu udisksctl unmount -b /dev/mapper/${NBDEXPORT}
 }
 
-open() {
+open_transport() {
   export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
-  checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
 
   inform "Opening SSH connection to ${SERVER}"
   open_ssh || die "Could not open SSH connection to ${SERVER}"
@@ -119,6 +119,40 @@ open() {
   NBD=$(nbd_next_open)
   inform "Opening network block device on /dev/${NBD}"
   open_export ${NBD} || die "Could not open network block device on /dev/${NBD}"
+}
+
+close_transport() {
+  FAILED=0
+  NBD=$(nbd_device)
+
+  if export_is_open; then
+    inform "Closing network block device on /dev/${NBD}"
+    close_export || FAILED=1
+  fi
+
+  if ssh_is_open; then
+    inform "Closing SSH connection to ${SERVER}"
+    close_ssh || FAILED=1
+  fi
+
+  [ ${FAILED} -eq 0 ] || return 1
+  tmpdirclean
+}
+
+attach() {
+  open_transport >&2 || return 1
+  echo "/dev/${NBD}"
+}
+
+detach() {
+  close_transport >&2
+}
+
+open() {
+  export_is_open && die "${NBDEXPORT} already open on $(nbd_device)"
+  checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
+
+  open_transport
 
   inform "Opening LUKS device from /dev/${NBD}"
   luks_open ${NBD} || die "Could not open LUKS device from /dev/${NBD}"
@@ -143,17 +177,13 @@ close() {
   luks_is_open && inform "Closing LUKS device from /dev/${NBD}"
   luks_close || die "Could not close LUKS device from /dev/${NBD}"
 
-  export_is_open && inform "Closing network block device on /dev/${NBD}"
-  close_export || die "Could not close network block device on /dev/${NBD}"
-
-  ssh_is_open && inform "Closing SSH connection to ${SERVER}"
-  close_ssh || die "Could not close existing SSH connection to ${SERVER}"
-
-  tmpdirclean
+  close_transport
 }
 
 case $1 in
   'open') open ;;
   'close') close ;;
-  *) usage '[open|close]' ;;
+  'attach') attach ;;
+  'detach') detach ;;
+  *) usage '[open|close|attach|detach]' ;;
 esac

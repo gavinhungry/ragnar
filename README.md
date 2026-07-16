@@ -14,9 +14,12 @@ Environment Variables
   - `RAGNAR_SERVER`: Server to connect to (can be a host alias from
     `~/.ssh/config`). Defaults to `localhost`.
   - `RAGNAR_NBDEXPORT`: Name of remote NBD export (see remote
-    `/etc/nbd-server/config`). Defaults to `ragnar`.
+     `/etc/nbd-server/config`). Defaults to `ragnar`.
+  - `RAGNAR_PORT`: Local NBD port. Defaults to `10809`.
   - `RAGNAR_KEYFILE`: Path to LUKS keyfile. Defaults to
     `/etc/luks/${RAGNAR_NBDEXPORT}.key`
+  - `RAGNAR_HEADER`: Path to detached LUKS header. Defaults to
+    `/etc/luks/${RAGNAR_NBDEXPORT}.header`
 
 Usage
 -----
@@ -41,6 +44,18 @@ Usage
     ragnar: Closing LUKS device from /dev/nbd0 ...
     ragnar: Closing network block device on /dev/nbd0 ...
     ragnar: Closing SSH connection to localhost ...
+
+### Transport API
+
+    $ ragnar attach
+    /dev/nbd0
+
+    $ ragnar detach
+
+`attach` and `detach` expose Ragnar's SSH/NBD transport without opening LUKS
+or mounting a filesystem. `attach` writes the local NBD device path to standard
+output and sends diagnostics to standard error. They are intended for tools
+that need to manage the encrypted volume themselves.
 
 License
 -------
