@@ -11,15 +11,15 @@ on `localhost`.
 
 Environment Variables
 ---------------------
-  - `RAGNAR_SERVER`: Server to connect to (can be a host alias from
+  - `RAGNAR_SSH_SERVER`: Server to connect to (can be a host alias from
     `~/.ssh/config`). Defaults to `localhost`.
-  - `RAGNAR_EXPORT`: Name of remote NBD export (see remote
+  - `RAGNAR_NBD_EXPORT`: Name of remote NBD export (see remote
      `/etc/nbd-server/config`). Defaults to `ragnar`.
-  - `RAGNAR_PORT`: Local NBD port. Defaults to `10809`.
-  - `RAGNAR_HEADER`: Path to detached LUKS header. Defaults to
-    `/etc/luks/${RAGNAR_EXPORT}.header`
-  - `RAGNAR_KEYFILE`: Path to LUKS keyfile. Defaults to
-    `/etc/luks/${RAGNAR_EXPORT}.key`
+  - `RAGNAR_NBD_LOCAL_PORT`: Local NBD port. Defaults to `10809`.
+  - `RAGNAR_LUKS_HEADER`: Path to detached LUKS header. Defaults to
+    `/etc/luks/${RAGNAR_NBD_EXPORT}.header`
+  - `RAGNAR_LUKS_KEYFILE`: Path to LUKS keyfile. Defaults to
+    `/etc/luks/${RAGNAR_NBD_EXPORT}.key`
   - `RAGNAR_MOUNTPOINT`: Existing local directory at which to mount the
     filesystem. When unset, `udisksctl` selects the mountpoint.
   - `RAGNAR_MOUNT_OPTIONS`: Comma-separated mount options. Defaults to no

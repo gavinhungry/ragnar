@@ -10,28 +10,28 @@
 
 [ ${_ABASH:-0} -ne 0 ] || source $(dirname "${BASH_SOURCE}")/abash/abash.sh
 
-SERVER=${RAGNAR_SERVER:-localhost}
-EXPORT=${RAGNAR_EXPORT:-${RAGNAR_NBDEXPORT:-ragnar}} # legacy RAGNAR_NBDEXPORT
-PORT=${RAGNAR_PORT:-10809}
-HEADER=${RAGNAR_HEADER:-/etc/luks/${EXPORT}.header}
-KEYFILE=${RAGNAR_KEYFILE:-/etc/luks/${EXPORT}.key}
+SSH_SERVER=${RAGNAR_SSH_SERVER:-${RAGNAR_SERVER:-localhost}}
+NBD_EXPORT=${RAGNAR_NBD_EXPORT:-${RAGNAR_NBDEXPORT:-ragnar}}
+NBD_LOCAL_PORT=${RAGNAR_NBD_LOCAL_PORT:-${RAGNAR_PORT:-10809}}
+LUKS_HEADER=${RAGNAR_LUKS_HEADER:-${RAGNAR_HEADER:-/etc/luks/${NBD_EXPORT}.header}}
+LUKS_KEYFILE=${RAGNAR_LUKS_KEYFILE:-${RAGNAR_KEYFILE:-/etc/luks/${NBD_EXPORT}.key}}
 MOUNTPOINT=${RAGNAR_MOUNTPOINT:-}
 MOUNT_OPTIONS=${RAGNAR_MOUNT_OPTIONS:-}
 
-TMP=$(tmpdirp "${SERVER}-${EXPORT}")
+TMP=$(tmpdirp "${SSH_SERVER}-${NBD_EXPORT}")
 mkdir -p ${TMP}
 
 ssh_is_open() {
-  ssh -qO check -S "${TMP}/ssh" ${SERVER} &> /dev/null
+  ssh -qO check -S "${TMP}/ssh" ${SSH_SERVER} &> /dev/null
 }
 
 open_ssh() {
-  ssh -fNn -MS "${TMP}/ssh" -L ${PORT}:127.0.0.1:10809 ${SERVER}
+  ssh -fNn -MS "${TMP}/ssh" -L ${NBD_LOCAL_PORT}:127.0.0.1:10809 ${SSH_SERVER}
 }
 
 close_ssh() {
   if ssh_is_open; then
-    ssh -qO exit -S "${TMP}/ssh" ${SERVER}
+    ssh -qO exit -S "${TMP}/ssh" ${SSH_SERVER}
   fi
 }
 
@@ -64,7 +64,7 @@ open_export() {
   checksu modprobe nbd
   NBD=$1
 
-  if quietly checksu nbd-client 127.0.0.1 ${PORT} /dev/${NBD} -name ${EXPORT}; then
+  if quietly checksu nbd-client 127.0.0.1 ${NBD_LOCAL_PORT} /dev/${NBD} -name ${NBD_EXPORT}; then
     echo ${NBD} > ${TMP}/nbd
   else
     close_ssh
@@ -82,21 +82,21 @@ close_export() {
 }
 
 luks_is_open() {
-  [ -b /dev/mapper/${EXPORT} ]
+  [ -b /dev/mapper/${NBD_EXPORT} ]
 }
 
 luks_open() {
   NBD=$1
-  checksu [ -f "${HEADER}" ] || HEADER="${NBD}"
-  checksu cryptsetup luksOpen /dev/${NBD} ${EXPORT} -d "${KEYFILE}" --header "${HEADER}"
+  checksu [ -f "${LUKS_HEADER}" ] || LUKS_HEADER="${NBD}"
+  checksu cryptsetup luksOpen /dev/${NBD} ${NBD_EXPORT} -d "${LUKS_KEYFILE}" --header "${LUKS_HEADER}"
 }
 
 luks_close() {
-  checksu cryptsetup luksClose /dev/mapper/${EXPORT}
+  checksu cryptsetup luksClose /dev/mapper/${NBD_EXPORT}
 }
 
 filesystem_mountpoint() {
-  udisksctl info -b /dev/mapper/${EXPORT} 2> /dev/null | grep MountPoints | cut -d':' -f2 | sed 's/^\s*//'
+  udisksctl info -b /dev/mapper/${NBD_EXPORT} 2> /dev/null | grep MountPoints | cut -d':' -f2 | sed 's/^\s*//'
 }
 
 filesystem_is_mounted() {
@@ -109,11 +109,11 @@ mount_filesystem() {
   if [ -n "${MOUNTPOINT}" ]; then
     COMMAND=(mount)
   else
-    COMMAND=(udisksctl mount -b /dev/mapper/${EXPORT})
+    COMMAND=(udisksctl mount -b /dev/mapper/${NBD_EXPORT})
   fi
 
   [ -z "${MOUNT_OPTIONS}" ] || COMMAND+=(-o "${MOUNT_OPTIONS}")
-  [ -z "${MOUNTPOINT}" ] || COMMAND+=(/dev/mapper/${EXPORT} "${MOUNTPOINT}")
+  [ -z "${MOUNTPOINT}" ] || COMMAND+=(/dev/mapper/${NBD_EXPORT} "${MOUNTPOINT}")
 
   quietly checksu "${COMMAND[@]}"
 }
@@ -122,15 +122,15 @@ unmount_filesystem() {
   if [ -n "${MOUNTPOINT}" ]; then
     quietly checksu umount "${MOUNTPOINT}"
   else
-    quietly checksu udisksctl unmount -b /dev/mapper/${EXPORT}
+    quietly checksu udisksctl unmount -b /dev/mapper/${NBD_EXPORT}
   fi
 }
 
 open_transport() {
-  export_is_open && die "${EXPORT} already open on $(nbd_device)"
+  export_is_open && die "${NBD_EXPORT} already open on $(nbd_device)"
 
-  inform "Opening SSH connection to ${SERVER}"
-  open_ssh || die "Could not open SSH connection to ${SERVER}"
+  inform "Opening SSH connection to ${SSH_SERVER}"
+  open_ssh || die "Could not open SSH connection to ${SSH_SERVER}"
   sleep 1
 
   NBD=$(nbd_next_open)
@@ -148,7 +148,7 @@ close_transport() {
   fi
 
   if ssh_is_open; then
-    inform "Closing SSH connection to ${SERVER}"
+    inform "Closing SSH connection to ${SSH_SERVER}"
     close_ssh || FAILED=1
   fi
 
@@ -166,8 +166,8 @@ detach() {
 }
 
 open() {
-  export_is_open && die "${EXPORT} already open on $(nbd_device)"
-  checksu [ -f "${KEYFILE}" ] || die "Keyfile not found"
+  export_is_open && die "${NBD_EXPORT} already open on $(nbd_device)"
+  checksu [ -f "${LUKS_KEYFILE}" ] || die "Keyfile not found"
   [ -z "${MOUNTPOINT}" ] || [ -d "${MOUNTPOINT}" ] || die "Mountpoint does not exist: ${MOUNTPOINT}"
 
   open_transport
@@ -175,14 +175,14 @@ open() {
   inform "Opening LUKS device from /dev/${NBD}"
   luks_open ${NBD} || die "Could not open LUKS device from /dev/${NBD}"
 
-  inform "Mounting filesystem from /dev/mapper/${EXPORT}"
-  mount_filesystem || die "Could not mount filesystem from /dev/mapper/${EXPORT}"
+  inform "Mounting filesystem from /dev/mapper/${NBD_EXPORT}"
+  mount_filesystem || die "Could not mount filesystem from /dev/mapper/${NBD_EXPORT}"
 
   msg "Filesystem is mounted on $(filesystem_mountpoint)"
 }
 
 close() {
-  export_is_open || die "${EXPORT} is not open"
+  export_is_open || die "${NBD_EXPORT} is not open"
   NBD=$(nbd_device)
 
   checksu
