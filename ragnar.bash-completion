@@ -1,0 +1,9 @@
+_ragnar() {
+  local cur=${COMP_WORDS[COMP_CWORD]}
+
+  if (( COMP_CWORD == 1 )); then
+    COMPREPLY=( $(compgen -W 'open close attach detach' -- "$cur") )
+  fi
+}
+
+complete -F _ragnar ragnar
