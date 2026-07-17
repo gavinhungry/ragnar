@@ -120,8 +120,8 @@ mount_filesystem() {
     COMMAND=(udisksctl mount -b /dev/mapper/${NBD_EXPORT})
   fi
 
-  [ -z "${MOUNT_OPTIONS}" ] || COMMAND+=(-o "${MOUNT_OPTIONS}")
-  [ -z "${MOUNTPOINT}" ] || COMMAND+=(/dev/mapper/${NBD_EXPORT} "${MOUNTPOINT}")
+  [ -n "${MOUNT_OPTIONS}" ] && COMMAND+=(-o "${MOUNT_OPTIONS}")
+  [ -n "${MOUNTPOINT}" ] && COMMAND+=(/dev/mapper/${NBD_EXPORT} "${MOUNTPOINT}")
 
   quietly checksu "${COMMAND[@]}"
 }
