@@ -18,20 +18,27 @@ LUKS_KEYFILE=${RAGNAR_LUKS_KEYFILE:-${RAGNAR_KEYFILE:-/etc/luks/${NBD_EXPORT}.ke
 MOUNTPOINT=${RAGNAR_MOUNTPOINT:-}
 MOUNT_OPTIONS=${RAGNAR_MOUNT_OPTIONS:-}
 
-TMP=$(tmpdirp "${SSH_SERVER}-${NBD_EXPORT}")
-mkdir -p ${TMP}
+SSH="${SUDO_USER:+checksu -u "$SUDO_USER"} /usr/bin/ssh"
+
+TMP="${TMPDIR:-/tmp}/ragnar-${SSH_SERVER}-${NBD_EXPORT}"
+mkdir -m 0700 -p "$TMP"
+[ -n "$SUDO_USER" ] && chown "$SUDO_USER":"$SUDO_USER" "$TMP"
+
+clean_tmp() {
+  rm -fr "$TMP"
+}
 
 ssh_is_open() {
-  ssh -qO check -S "${TMP}/ssh" ${SSH_SERVER} &> /dev/null
+  $SSH -qO check -S "${TMP}/ssh" ${SSH_SERVER} &> /dev/null
 }
 
 open_ssh() {
-  ssh -fNn -MS "${TMP}/ssh" -L ${NBD_LOCAL_PORT}:127.0.0.1:10809 ${SSH_SERVER}
+  $SSH -fNn -MS "${TMP}/ssh" -L ${NBD_LOCAL_PORT}:127.0.0.1:10809 ${SSH_SERVER}
 }
 
 close_ssh() {
   if ssh_is_open; then
-    ssh -qO exit -S "${TMP}/ssh" ${SSH_SERVER}
+    $SSH -qO exit -S "${TMP}/ssh" ${SSH_SERVER}
   fi
 }
 
@@ -68,7 +75,7 @@ open_export() {
     echo ${NBD} > ${TMP}/nbd
   else
     close_ssh
-    rm -fr ${TMP}
+    clean_tmp
     return 1
   fi
 }
@@ -134,8 +141,8 @@ open_transport() {
   sleep 1
 
   NBD=$(nbd_next_open)
-  inform "Opening network block device on /dev/${NBD}"
-  open_export ${NBD} || die "Could not open network block device on /dev/${NBD}"
+  inform "Opening NBD on /dev/${NBD}"
+  open_export ${NBD} || die "Could not open NBD on /dev/${NBD}"
 }
 
 close_transport() {
@@ -143,7 +150,7 @@ close_transport() {
   NBD=$(nbd_device)
 
   if export_is_open; then
-    inform "Closing network block device on /dev/${NBD}"
+    inform "Closing NBD on /dev/${NBD}"
     close_export || FAILED=1
   fi
 
@@ -153,7 +160,7 @@ close_transport() {
   fi
 
   [ ${FAILED} -eq 0 ] || return 1
-  tmpdirclean
+  clean_tmp
 }
 
 attach() {
