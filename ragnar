@@ -8,7 +8,8 @@
 # https://github.com/gavinhungry/ragnar
 #
 
-[ ${_ABASH:-0} -ne 0 ] || source $(dirname "${BASH_SOURCE}")/abash/abash.sh
+# https://github.com/gavinhungry/abash
+source "${ABASH_PATH:-/usr/local/share/abash/abash.sh}"
 
 SSH_SERVER=${RAGNAR_SSH_SERVER:-${RAGNAR_SERVER:-localhost}}
 NBD_EXPORT=${RAGNAR_NBD_EXPORT:-${RAGNAR_NBDEXPORT:-ragnar}}
