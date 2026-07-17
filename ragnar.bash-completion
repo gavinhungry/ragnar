@@ -1,4 +1,4 @@
-_ragnar() {
+__ragnar() {
   local cur=${COMP_WORDS[COMP_CWORD]}
 
   if (( COMP_CWORD == 1 )); then
@@ -6,4 +6,4 @@ _ragnar() {
   fi
 }
 
-complete -F _ragnar ragnar
+complete -F __ragnar ragnar
